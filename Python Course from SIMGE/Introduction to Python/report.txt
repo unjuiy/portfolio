@@ -1,0 +1,20 @@
+[Superstore Report]
+Total Sales : 2297200.860299955
+Total Profit : 286397.0217000013
+
+Sales for Furniture : 741999.7952999998
+Sales for Office Supplies : 719047.0320000029
+Sales for Technology : 836154.0329999966
+
+Profit for Furniture : 18451.2728
+Profit for Office Supplies : 122490.80080000011
+Profit for Technology : 145454.9480999999
+
+<Sales for each State>
+Alabama: 19510.639999999992, Arizona: 35282.001, Arkansas: 11678.129999999997, Colorado: 32108.117999999995, Connecticut: 13384.356999999996, Delaware: 27451.068999999992, District of Columbia: 2865.0199999999995, Florida: 89473.708, Georgia: 49095.840000000004, Idaho: 4382.486000000002, Illinois: 80166.10099999986, Indiana: 53555.36, Iowa: 4579.759999999999,, Kentucky: 36591.74999999997, Louisiana: 9217.029999999999, Maine: 1270.5300000000002, Maryland: 23705.523, Massachusetts: 28634.433999999994, Michigan: 76269.61400000002, Minnesota: 29863.149999999994, Mississippi: 10771.34, Missouri: 22205.149999999998, Montana: 5589.351999999997, Nebraska: 7464.9299999999985, Nevada: 16729.102, New Hampshire: 7292.523999999999, New Jersey: 35764.31200000001, New Mexico: 4783.521999999999, New York: 310876.2709999998, North Carolina: 55603.16399999997, North Dakota: 919.91, Ohio: 78258.13599999993, Oklahoma: 19683.39, Oregon: 17431.14999999999, Pennsylvania: 116511.91400000003, Rhode Island: 22627.955999999995, South Carolina: 8481.71, South Dakota: 1315.5600000000002, Tennessee: 30661.87299999998, Texas: 170188.04580000002, Utah: 11220.055999999999, Vermont: 8929.369999999999, Virginia: 70636.71999999999, Washington: 138641.26999999993, West Virginia: 1209.824, Wisconsin: 32114.61000000002, Wyoming: 1603.136
+
+<Profit for each State>
+Alabama: 5786.825299999999, Arizona: -3427.9246, Arkansas: 4008.6871, California: 76381.38710000017, Colorado: -6527.857900000001, Connecticut: 3511.4918000000002, Delaware: 9977.374800000001, District of Columbia: 1059.5892999999999, Florida: -3399.3017, Georgia: 16250.043300000003, Idaho: 826.7230999999999, Illinois: -12607.88699999998, Indiana: 18382.936300000005, Iowa: 1183.8119000000002, Kansas: 836.4435000000001, Kentucky: 11199.696600000005, Louisiana: 2196.102300000001, Maine: 454.4862, Maryland: 7031.178799999997, Massachusetts: 6785.501600000005, Michigan: 24463.187599999994, Minnesota: 10823.1874, Mississippi: 3172.9761999999982, Missouri: 6436.210499999999, Montana: 1833.3285, Nebraska: 2037.0942000000007, Nevada: 3316.7659, New Hampshire: 1706.5028, New Jersey: 9772.9138, New Mexico: 1157.1161, New York: 74038.54860000005, North Carolina: -7490.912200000003, North Dakota: 230.14969999999997, Ohio: -16971.376600000018, Oklahoma: 4853.956, Oregon: -1190.4704999999992, Pennsylvania: -15559.960300000013, Rhode Island: 7285.629300000001, South Carolina: 1769.0566000000003, South Dakota: 394.8283, Tennessee: -5341.6936, Texas: -25729.3563, Utah: 2546.5335000000005, Vermont: 2244.9783, Virginia: 18597.9504, Washington: 33402.651699999995, West Virginia: 185.9216, Wisconsin: 8401.800399999998, Wyoming: 100.196
+
+<Best-selling Sub-Category for each State>
+Alabama : Tables, Arizona : Tables, Arkansas : Tables, California : Tables, Colorado : Tables, Connecticut : Tables, Delaware : Tables, District of Columbia : Paper, Florida : Tables, Georgia : Tables, Idaho : Tables, Illinois : Tables, Indiana : Tables, Iowa : Tables, Kansas : Supplies, Kentucky : Tables, Louisiana : Tables, Maine : Phones, Maryland : Tables, Massachusetts : Tables, Michigan : Tables, Minnesota : Tables, Mississippi : Tables, Missouri : Tables, Montana : Storage, Nebraska : Supplies, Nevada : Tables, New Hampshire : Tables, New Jersey : Tables, New Mexico : Supplies, New York : Tables, North Carolina : Tables, North Dakota : Storage, Ohio : Tables, Oklahoma : Tables, Oregon : Tables, Pennsylvania : Tables, Rhode Island : Tables, South Carolina : Storage, South Dakota : Supplies, Tennessee : Tables, Texas : Tables, Utah : Tables, Vermont : Storage, Virginia : Tables, Washington : Tables, West Virginia : Tables, Wisconsin : Tables, Wyoming : Chairs

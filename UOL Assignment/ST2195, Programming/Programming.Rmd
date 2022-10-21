@@ -1,0 +1,450 @@
+---
+title: '200615086'
+author: "Injun Yeo"
+date: "3/31/2022"
+output: html_document
+---
+# set the working directory that contains the files
+setwd("~/Desktop/Year 2/ST2195, Programming/Coursework")
+getwd()
+
+# ===== load libraries ======
+library(DBI)
+library(dplyr)
+library(tidyverse)
+library(lubridate)
+
+# ===== create the databases =====
+if (file.exists("airline.db"))
+  file.remove("airline.db")
+
+conn <- dbConnect(RSQLite::SQLite(), "airline.db")
+
+# ===== write to the database =====
+# load in the data from the csv files
+airports <- read.csv("./dataverse_files/airports.csv", header = TRUE)
+carriers <- read.csv("./dataverse_files/carriers.csv", header = TRUE)
+planes <- read.csv("./dataverse_files/plane-data.csv", header = TRUE)
+dbWriteTable(conn, "airports", airports)
+dbWriteTable(conn, "carriers", carriers)
+dbWriteTable(conn, "planes", planes)
+
+# create a loop to load 2005-2007 flight data files directly from compressed bz2 format
+# this will take some time
+# you could also unzip bz2 format individually into .csv files
+
+flight <- data.frame()
+filename <- list.files("./dataverse_files/flights")
+setwd("~/Desktop/Year 2/ST2195, Programming/Coursework/dataverse_files/flights")
+for(i in filename) {
+  flight_temp <- read.csv(i, header = TRUE)
+  flight <- rbind(flight, flight_temp)
+}
+#21735733
+
+dbWriteTable(conn, "flight", flight)
+
+# remove temporary dataframe and useless values
+rm(flight_temp, filename, i)
+
+setwd("~/Desktop/Year 2/ST2195, Programming/Coursework")
+
+# garbage collection
+gc()
+
+# Delete the cancelled flights
+flight <- flight %>% filter(Cancelled == 0)
+#21319321
+
+# Correlation test between DepDelay and ArrDelay
+cor.test(flight$ArrDelay, flight$DepDelay)
+#0.9202857 
+
+DepArrDelay <- flight %>%
+  filter(DepDelay > 0, ArrDelay > 0) %>%
+  select(DepDelay, ArrDelay)
+
+ggplot(data = DepArrDelay, aes(x = ArrDelay, y = DepDelay)) + geom_point()
+#plot(DepArrDelay$ArrDelay, DepArrDelay$DepDelay, main="Scatterplot")
+
+rm(DepArrDelay)
+
+# Filter data with ArrDelay
+flight <- flight %>%
+  filter(!is.na(ArrDelay), !ArrDelay <= 0)
+#9714043
+
+
+#=================================================================================================#
+# 1. When is the best time of day, day of the week, and time of year to fly to minimise delays?===#
+#=================================================================================================#
+
+# Integer to POSIXct
+flight_q1 <- flight %>%
+  select(Year, Month, DayofMonth, CRSDepTime, DepDelay)
+
+datetime <- function(year, month, day, time) {
+  make_datetime(year, month, day, hour = time %/% 100, min = time %% 100)
+}
+
+flight_q1 <- flight_q1 %>%
+  mutate(
+    CRSDepDate = datetime(Year, Month, DayofMonth, CRSDepTime)
+  ) %>%
+  select(CRSDepDate, DepDelay)
+
+# if DepDelay is more than 15 minuites, it is considered as delayed
+flight_q1$Delayed <- flight_q1$DepDelay > 15
+
+#===Best hour of the day===
+# find the lowest percent of delayed
+flight_q1 %>%
+  mutate(hour = hour(CRSDepDate)) %>%
+  ggplot(aes(x = hour, fill=Delayed)) +
+  geom_bar(position = "fill") +
+  labs(
+    title = "The proportion of delay by hour",
+    x = "Hour of Departure",
+    y = "Delay Status (Proportion)") + 
+  theme(plot.title = element_text(hjust = 0.5))
+
+# find the smallest average depdelay
+group_by_hour <-
+  flight_q1 %>%
+  mutate(hour = hour(CRSDepDate)) %>%
+  group_by(hour) %>%
+  summarise(mean_depdelay = mean(DepDelay))
+
+ggplot(data = group_by_hour, mapping = aes(x = hour, y = mean_depdelay)) +
+  geom_line() +
+  geom_text(mapping = aes(label = round(mean_depdelay,1), fontface = 'bold', vjust = -0.7), size = 3) +
+  labs(title = "The average departure delay by hour") + 
+  theme(plot.title = element_text(hjust = 0.5))
+
+#=====the best hour of the day to minimize delays is 6am.=====
+
+#===Best day of the week===
+# find the lowest percent of delayed
+flight_q1 %>%
+  mutate(wday = wday(CRSDepDate)) %>%
+  ggplot(aes(x = wday, fill=Delayed)) +
+  geom_bar(position = "fill") +
+  labs(
+    title = "The proportion of delay by day of week",
+    x = "Day of week",
+    y = "Delay Status (Proportion)") + 
+  theme(plot.title = element_text(hjust = 0.5))
+
+# find the smallest average depdelay
+group_by_wday <-
+  flight_q1 %>%
+  mutate(wday = wday(CRSDepDate)) %>%
+  group_by(wday) %>%
+  summarise(mean_depdelay = mean(DepDelay))
+
+ggplot(data = group_by_wday, mapping = aes(x = wday, y = mean_depdelay)) +
+  geom_line() +
+  geom_text(mapping = aes(label = round(mean_depdelay,1), fontface = 'bold', vjust = -0.7), size = 3) +
+  labs(title = "The average departure delay by day of week") + 
+  theme(plot.title = element_text(hjust = 0.5))
+
+#=====the best day of week to minimize delays is Tue.=====
+
+#===Best month of the years===
+# find the lowest percent of delayed
+flight_q1 %>%
+  mutate(month = month(CRSDepDate)) %>%
+  ggplot(aes(x = month, fill=Delayed)) +
+  geom_bar(position = "fill") +
+  labs(
+    title = "The proportion of delay by month",
+    x = "Month",
+    y = "Delay Status (Proportion)") + 
+  theme(plot.title = element_text(hjust = 0.5))
+
+# find the smallest average depdelay
+group_by_month <-
+  flight_q1 %>%
+  mutate(month = month(CRSDepDate)) %>%
+  group_by(month) %>%
+  summarise(mean_depdelay = mean(DepDelay))
+
+ggplot(data = group_by_month, mapping = aes(x = month, y = mean_depdelay)) +
+  geom_line() +
+  geom_text(mapping = aes(label = round(mean_depdelay,1), fontface = 'bold', vjust = -0.7), size = 3) +
+  labs(title = "The average departure delay by month") + 
+  theme(plot.title = element_text(hjust = 0.5))
+
+#=====the best month of year to minimize delays is Sep.=====
+
+rm(flight_q1, group_by_hour, group_by_wday, group_by_month)
+
+#=================================================================================================#
+# 2. Do older planes suffer more delays?==========================================================#
+#=================================================================================================#
+
+# add manufacture year on flight data frame
+flight_q2 <- flight %>%
+  select(TailNum, CarrierDelay)
+
+names(flight_q2)[1] <- c("tailnum")
+flight_q2 <- left_join(flight_q2, planes, by = "tailnum")
+flight_q2 <- subset(flight_q2, select=-c(type, 
+                                         issue_date, 
+                                         manufacturer,
+                                         model, 
+                                         status, 
+                                         aircraft_type, 
+                                         engine_type))
+
+names(flight_q2)[3] <- c("Manufacture_Year")
+
+flight_q2 <- flight_q2 %>%
+  filter(!is.na(CarrierDelay), !is.na(Manufacture_Year)) %>%
+  select(tailnum, CarrierDelay, Manufacture_Year)
+
+flight_q2 <- subset(flight_q2, Manufacture_Year >= 1956 & Manufacture_Year < 2008)
+
+ggplot(data = flight_q2) +
+  geom_point(aes(x = Manufacture_Year, y = CarrierDelay)) +
+  labs(title = "Correlation between Manufacture Year and Carrier Delay") +
+  theme(axis.text.x=element_text(angle=90, hjust=1))
+
+rm(flight_q2)
+
+#===== The manufacture year of airplane is not related to delay. =====
+
+#=================================================================================================#
+# 3. How does the number of people flying between different locations change over time?===========# 
+#=================================================================================================#
+
+library(igraph)
+library(leaflet)
+library(plyr)
+library(sp)
+
+# year 2005
+from_to_2005 <- flight %>%
+  filter(Year == 2005) %>%
+  select(Origin, Dest)
+
+freq <- count(from_to_2005)
+freq <- freq[freq$freq >= 2000,]
+
+arr_airport <- as.character(from_to_2005[,1])
+dep_airport <- as.character(from_to_2005[,2])
+all_airports <- data.frame(sort(unique(append(arr_airport, dep_airport))))
+names(all_airports)[1] <- c("Airport")
+
+loc <- left_join(all_airports, airports, by = c("Airport" = "iata"))
+loc <- subset(loc, select = -c(airport,
+                                    city,
+                                    state,
+                                    country))
+
+route <- graph.data.frame(freq, directed = TRUE, vertices = loc)
+network <- get.data.frame(route, "both")
+vert <- network$vertices
+coordinates(vert) <- ~ long + lat
+edges <- network$edges
+edges <- lapply(1:nrow(edges), function(i) {
+  as(rbind(vert[vert$name == edges[i, "from"], ],
+           vert[vert$name == edges[i, "to"], ]), 
+     "SpatialLines")
+})
+
+edges <- do.call(rbind, edges)
+
+leaflet(vert) %>%
+  addTiles() %>%
+  addCircles(data = vert, radius = 1, weight = 1) %>%
+  addPolylines(data = edges, weight = 0.0002*network$edges$freq)
+
+# year 2006
+from_to_2006 <- flight %>%
+  filter(Year == 2006) %>%
+  select(Origin, Dest)
+
+freq <- count(from_to_2006)
+freq <- freq[freq$freq >= 2000,]
+
+arr_airport <- as.character(from_to_2006[,1])
+dep_airport <- as.character(from_to_2006[,2])
+all_airports <- data.frame(sort(unique(append(arr_airport, dep_airport))))
+names(all_airports)[1] <- c("Airport")
+
+loc <- left_join(all_airports, airports, by = c("Airport" = "iata"))
+loc <- subset(loc, select = -c(airport,
+                               city,
+                               state,
+                               country))
+
+route <- graph.data.frame(freq, directed = TRUE, vertices = loc)
+network <- get.data.frame(route, "both")
+vert <- network$vertices
+coordinates(vert) <- ~ long + lat
+edges <- network$edges
+edges <- lapply(1:nrow(edges), function(i) {
+  as(rbind(vert[vert$name == edges[i, "from"], ],
+           vert[vert$name == edges[i, "to"], ]), 
+     "SpatialLines")
+})
+
+edges <- do.call(rbind, edges)
+
+leaflet(vert) %>%
+  addTiles() %>%
+  addCircles(data = vert, radius = 1, weight = 1) %>%
+  addPolylines(data = edges, weight = 0.0002*network$edges$freq)
+
+# year 2007
+from_to_2007 <- flight %>%
+  filter(Year == 2007) %>%
+  select(Origin, Dest)
+
+freq <- count(from_to_2007)
+freq <- freq[freq$freq >= 2000,]
+
+arr_airport <- as.character(from_to_2007[,1])
+dep_airport <- as.character(from_to_2007[,2])
+all_airports <- data.frame(sort(unique(append(arr_airport, dep_airport))))
+names(all_airports)[1] <- c("Airport")
+
+loc <- left_join(all_airports, airports, by = c("Airport" = "iata"))
+loc <- subset(loc, select = -c(airport,
+                               city,
+                               state,
+                               country))
+
+route <- graph.data.frame(freq, directed = TRUE, vertices = loc)
+network <- get.data.frame(route, "both")
+vert <- network$vertices
+coordinates(vert) <- ~ long + lat
+edges <- network$edges
+edges <- lapply(1:nrow(edges), function(i) {
+  as(rbind(vert[vert$name == edges[i, "from"], ],
+           vert[vert$name == edges[i, "to"], ]), 
+     "SpatialLines")
+})
+
+edges <- do.call(rbind, edges)
+
+leaflet(vert) %>%
+  addTiles() %>%
+  addCircles(data = vert, radius = 1, weight = 1) %>%
+  addPolylines(data = edges, weight = 0.0002*network$edges$freq)
+
+rm(from_to_2005, from_to_2006, from_to_2007,
+   freq, arr_airport, dep_airport, all_airports,
+   loc, route, network, vert, edges)
+
+#=================================================================================================#
+# 4. Can you detect cascading failures as delays in one airport create delays in others?==========#
+#=================================================================================================#
+
+# Delay Propagation (= cascading failures as delays) 
+#  1.	A flight arrives late at an airport.
+#  2.	A flight departs late in subsequent stages.
+#  3.	A flight arrives late at the next destination.
+
+flight_q4 <- flight %>%
+  select(Year, Month, DayofMonth, CRSDepTime, CRSArrTime, ArrDelay, LateAircraftDelay, Origin, Dest)
+
+flight_q4 <- flight_q4 %>%
+  mutate(
+    DepTime = datetime(Year, Month, DayofMonth, CRSDepTime),
+    ArrTime = datetime(Year, Month, DayofMonth, CRSArrTime),
+  ) %>%
+  select(DepTime, ArrTime, ArrDelay, LateAircraftDelay, Origin, Dest)
+#9714043
+
+flight_q4 <- flight_q4 %>%
+  filter(!DepTime > ArrTime) %>%
+  select(DepTime, ArrTime, ArrDelay, LateAircraftDelay, Origin, Dest)
+#9493474
+
+LAD <- flight_q4 %>%
+  filter(!is.na(LateAircraftDelay), !LateAircraftDelay == 0) %>%
+  select(DepTime, ArrTime, ArrDelay, LateAircraftDelay, Origin, Dest)
+
+# ascending
+flight_q4 <- arrange(flight_q4,flight_q4$DepTime)
+LAD <- arrange(LAD,LAD$ArrTime)
+
+cf_count <- 0
+
+for(k in 1:nrow(LAD)) {
+  flight_q4$next_flight <- LAD$ArrTime[k] < flight_q4$DepTime &
+    LAD$ArrTime[k]+LAD$ArrDelay[k]*60+600 > flight_q4$DepTime  #ArrDelay + 10 mins
+  flight_q4$same_airport <- LAD$Dest[k] == flight_q4$Origin
+  if (sum((flight_q4$next_flight & flight_q4$same_airport)) > 0) {
+    if (flight_q4[which(flight_q4$next_flight & flight_q4$same_airport),4][1] > 0) {
+      cf_count <- cf_count + 1
+      }
+  }
+}
+#k=289119, cf_count=87075, 30.12%
+#k=307255, cf_count=93860, 30.54%
+#k=337415, cf_count=104899, 31.09%
+#k=400324, cf_count=125197, 31.27%
+
+paste0("The probability of the cascading failures is ", round(cf_count / nrow(LAD) * 100,2), "%")
+## "The probability of the cascading failures is 30.9%"
+
+#===== "The probability of the cascading failures is 31.27%" =====
+
+rm(flight_q4, LAD, cf_count, datetime)
+
+#=================================================================================================#
+# 5. Use the available variables to construct a model that predicts delays. ======================#
+#=================================================================================================#
+library(varhandle)
+
+
+flight_q5 <- flight %>%
+  select(Year, Month, DayofMonth, DayOfWeek, CRSDepTime, ArrDelay)
+
+
+flight_q5 <- flight_q5[sample(nrow(flight_q5), 5000), ]
+
+### Data Preprocessing
+# (1) factor type
+
+
+# (2) summary
+summary(flight_q5)
+
+# (3) Correlation between numeric variables
+corrplot(cor(unfactor(flight_q5[])), method = 'number')
+
+
+### 4. Train, Test 데이터 분할
+train_idx <- sample(1:5000, size = 3500, replace=FALSE) # Total data 5000 * 0.7 = 3500
+train_data = flight_q5[train_idx, ]
+test_data = flight_q5[-train_idx, ]
+
+### 5. Regression model Fitting
+# (1) Linear regression
+lm_model = lm(ArrDelay ~ ., train_data)
+summary(lm_model)
+# Year, CRSArrTime
+predicted = predict(lm_model, test_data)
+rsq <- function (x, y) cor(x, y) ^ 2
+rsq(test_data$ArrDelay,predicted)
+# rsq = 0.01698713
+
+# (2) Tree based regression (random Forest)
+rf_model = randomForest(ArrDelay ~ ., train_data, ntree = 500)  # number of trees = 500
+predicted = predict(rf_model, test_data)
+rsq(test_data$ArrDelay,predicted)
+# rsq = 0.01752033
+
+# (3) Non-linear method (SVM)
+svm_model = svm(ArrDelay ~ ., train_data, kernel = 'radial')
+predicted = predict(svm_model, test_data)
+rsq(test_data$ArrDelay,predicted)
+# rsq = 0.01495504
+
+# ======== disconnect database ========
+
+dbDisconnect(conn)

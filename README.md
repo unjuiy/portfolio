@@ -1,18 +1,14 @@
 # portfolio
 This is portfolio, which is the result collection of my entire programming life.
 
-[Python Courses] are the final assignments of Python course.
 
+[Python Courses] are the final assignments of Python course.
 Those certifications of Python programming issued by SIM Global Education.
 
 [Hackathon] is the code for our project, a restaurant recommendation platform using machine learning.
-
 I constructed content-based filtering, one of the recommendation systems, using gradient descent.
-
 Dataset is TripAdvisor's reviews of Singapore restaurants.
-
 Collaborative filtering was also considered, but the hackathon period was short, so it had to be stopped at the concept stage.
-
 This hackathon is the Virtual Hackathon: Singapore's Next E-Commerce Unicorn issued by GDEXA and SIM Global Education.
 
 
